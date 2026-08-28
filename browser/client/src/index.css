@@ -187,3 +187,8 @@
 .item-description-skeleton span.short { width: 62%; animation-delay: 120ms; }
 .dark-mode .item-description-skeleton span { background-image: linear-gradient(90deg, rgba(215,179,91,.10), rgba(215,179,91,.36), rgba(215,179,91,.10)); }
 @media (prefers-reduced-motion: reduce) { .item-description-skeleton span { animation: none; } }
+
+/* Item category skeleton: reserves the metadata line beneath each held-item description. */
+.item-category-skeleton { display: block; width: 84px; height: 6px; margin-top: 6px; border-radius: 1px; background: linear-gradient(90deg, rgba(20,125,120,.12), rgba(20,125,120,.42), rgba(20,125,120,.12)); background-size: 200% 100%; animation: catalog-shimmer 1.25s linear infinite; }
+.dark-mode .item-category-skeleton { background-image: linear-gradient(90deg, rgba(97,196,182,.10), rgba(97,196,182,.38), rgba(97,196,182,.10)); }
+@media (prefers-reduced-motion: reduce) { .item-category-skeleton { animation: none; } }

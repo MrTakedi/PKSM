@@ -10,6 +10,7 @@
 - [x] Lazy-load the large generated move and item catalogs to reduce the initial JavaScript bundle.
 - [x] Add an animated loading skeleton while the deferred catalog chunk is fetching.
 - [x] Add matching item-description skeleton rows during catalog hydration.
+- [x] Add item-category skeleton placeholders during catalog hydration.
 
 ## Sources and regeneration
 
