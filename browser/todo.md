@@ -1,8 +1,9 @@
-# Verified binary export
+# Empty default and generation data refactor
 
-- [x] Inspect the supplied Gen I Red fixture and map its save/box structures to PKSM’s Gen I reader.
-- [x] Define a Gen I binary adapter interface with read, edit, serialize, and checksum boundaries.
-- [x] Normalize Gen I records into the browser storage model while preserving unknown bytes.
-- [x] Enable guarded Gen I binary export only after fixture round-trip validation passes.
-- [x] Run fixture-style round-trip tests, browser checks, and build validation.
-- [x] Commit and push the verified Gen I adapter milestone to GitHub.
+- [x] Audit current seed records, sprite references, and build scripts.
+- [x] Make the default workspace empty while preserving localStorage restoration after an explicit load/save.
+- [x] Add a build-time dummy-data flag and document the command for preview builds.
+- [x] Split games, species/sprites, moves, items, and key items into generation-scoped arrays.
+- [x] Display loaded game context and richer move/item metadata in the editor and inspector.
+- [x] Run empty-state, dummy-mode, type/build, and responsive checks.
+- [x] Commit and push the refactor to the GitHub feature branch.
