@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { nationalPokedex } from "@/lib/pokedex";
 import { detectSaveFormat, formatStatusLabel, type SaveFormat } from "@/lib/saveFormats";
 import { layoutLabel, recognizeSaveLayout, type SaveLayout } from "@/lib/saveLayouts";
+import { applyGen1RecordEdit, isGen1International, parseGen1Save, serializeGen1Save, type Gen1BinarySave } from "@/lib/gen1Adapter";
 
 type PokemonRecord = {
   id: number;
@@ -54,6 +55,7 @@ type PokemonRecord = {
   color: string;
   initials: string;
   status: "ready" | "edited" | "empty";
+  binarySource?: { box: number; slot: number; sourceOffset: number; nicknameOffset: number };
 };
 
 const seedRecords: Omit<PokemonRecord, "box" | "slot">[] = [
@@ -181,6 +183,7 @@ export default function Home() {
   const [saveFile, setSaveFile] = useState<{ name: string; size: number; type: string } | null>(null);
   const [detectedFormat, setDetectedFormat] = useState<SaveFormat | null>(null);
   const [detectedLayout, setDetectedLayout] = useState<SaveLayout | null>(null);
+  const [gen1Save, setGen1Save] = useState<Gen1BinarySave | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [shinyOnly, setShinyOnly] = useState(false);
@@ -404,6 +407,7 @@ export default function Home() {
       });
       if (!valid) throw new Error("This is not a valid PKSM Browser workspace export.");
       setRecords(importedRecords as PokemonRecord[]);
+      setGen1Save(null);
       setSaveFile({ name: file.name, size: file.size, type: file.type || "application/json" });
       setDetectedFormat(null);
       setDetectedLayout(null);
@@ -416,6 +420,33 @@ export default function Home() {
     }
   }
 
+  function exportActiveFile() {
+    if (!gen1Save || detectedFormat?.id !== "gen1-gb") {
+      exportWorkspace();
+      return;
+    }
+    const movedRecord = records.find((record) => record.binarySource && (record.box !== record.binarySource.box || record.slot !== record.binarySource.slot));
+    if (movedRecord) {
+      toast.error("Move not ready for binary export", { description: "Gen I binary export currently supports in-place edits only. Return the loaded record to its original slot before exporting." });
+      return;
+    }
+    const nextSave: Gen1BinarySave = { bytes: new Uint8Array(gen1Save.bytes), currentBox: gen1Save.currentBox, records: gen1Save.records };
+    records.filter((record) => record.status !== "empty" && record.binarySource).forEach((record) => {
+      const source = nextSave.records.find((candidate) => candidate.box === record.binarySource?.box && candidate.slot === record.binarySource?.slot);
+      if (source) applyGen1RecordEdit(nextSave, source, record);
+    });
+    const output = serializeGen1Save(nextSave);
+    const url = URL.createObjectURL(new Blob([output], { type: "application/octet-stream" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${saveFile?.name.replace(/\.[^.]+$/, "") || "pokemon-red"}-edited.sav`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setGen1Save(nextSave);
+    setDirty(false);
+    toast.success("Gen I save exported", { description: "Updated in-place records and PKSM checksum bytes were written to a new 32 KiB .sav file." });
+  }
+
   async function handleFile(file: File) {
     if (file.name.toLowerCase().endsWith(".json")) {
       void handleStorageFile(file);
@@ -423,12 +454,25 @@ export default function Home() {
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const layout = recognizeSaveLayout(bytes);
-    setSaveFile({ name: file.name, size: file.size, type: file.type || "application/octet-stream" });
     const format = detectSaveFormat(file.name, layout?.dataSize || file.size);
+    const parsedGen1 = isGen1International(bytes) ? parseGen1Save(bytes, (nationalId) => nationalPokedex.find((species) => species.id === nationalId)?.name || "Unknown species") : null;
+    setSaveFile({ name: file.name, size: file.size, type: file.type || "application/octet-stream" });
     setDetectedFormat(format);
     setDetectedLayout(layout);
+    setGen1Save(parsedGen1);
+    if (parsedGen1) {
+      const parsedBySlot = new Map(parsedGen1.records.map((record) => [`${record.box}-${record.slot}`, record]));
+      setRecords(initialRecords.map((empty) => {
+        const parsed = parsedBySlot.get(`${empty.box}-${empty.slot}`);
+        if (!parsed) return empty;
+        const species = nationalPokedex.find((entry) => entry.id === parsed.nationalId);
+        return { ...empty, species: species?.name || `Species ${parsed.nationalId}`, nickname: parsed.nickname || species?.name?.toUpperCase() || "POKEMON", level: parsed.level, type: "Gen I record", nature: "—", ability: "—", heldItem: "—", gender: "unknown", stats: parsed.stats, moves: parsed.moves, shiny: false, color: "#b9d8cf", initials: (parsed.nickname || species?.name || "PK").slice(0, 2).toUpperCase(), status: "ready", binarySource: { box: parsed.box, slot: parsed.slot, sourceOffset: parsed.sourceOffset, nicknameOffset: parsed.nicknameOffset } };
+      }));
+      setSelectedId(parsedGen1.records[0] ? (parsedGen1.records[0].box - 1) * 30 + parsedGen1.records[0].slot : 1);
+      setBox(parsedGen1.records[0]?.box || 1);
+    }
     setShowImport(false);
-    toast.success(format ? `${format.label} detected` : "File loaded for inspection", { description: format ? `${formatStatusLabel(format.status)}${layout ? ` · ${layoutLabel(layout.kind)}` : ""} · ${format.reader}. Binary editing/export is not enabled until the adapter is verified.` : `${file.name} is available locally. No source-backed format family matched its name or size.` });
+    toast.success(format ? `${format.label} detected` : "File loaded for inspection", { description: parsedGen1 ? "Gen I adapter verified for in-place record edits and binary export. Held items, abilities, and modern metadata are not present in Gen I saves." : format ? `${formatStatusLabel(format.status)}${layout ? ` · ${layoutLabel(layout.kind)}` : ""} · ${format.reader}. Binary editing/export is not enabled until the adapter is verified.` : `${file.name} is available locally. No source-backed format family matched its name or size.` });
   }
 
   function downloadSummaryCard() {
@@ -455,6 +499,7 @@ export default function Home() {
     setSaveFile(null);
     setDetectedFormat(null);
     setDetectedLayout(null);
+    setGen1Save(null);
     setRecords(initialRecords);
     setDirty(false);
     toast("Workspace reset", { description: "No local files were deleted." });
@@ -483,14 +528,14 @@ export default function Home() {
       </aside>
 
       <main className="main-canvas">
-        <header className="topbar"><div className="mobile-brand"><AppMark /><span>PKSM Browser</span></div><div className="breadcrumbs"><span>Workspace</span><ChevronDown size={13} /><strong>{activeArea}</strong></div><div className="top-actions"><button className="icon-button theme-toggle" onClick={() => setDarkMode((current) => !current)} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>{darkMode ? <Sun size={17} /> : <Moon size={17} />}</button><button className="icon-button mobile-only" onClick={() => setShowInspector(!showInspector)} aria-label="Toggle inspector"><PanelRight size={18} /></button><button className="quiet-button" onClick={() => storageFileInput.current?.click()}><HardDrive size={15} /> Load workspace</button><button className="quiet-button" onClick={() => setShowImport(true)}><Upload size={15} /> Import save</button><button className="primary-button" onClick={exportWorkspace}><Download size={15} /> {dirty ? "Export changes" : "Export storage"}</button><button className="icon-button" onClick={() => toast("More tools", { description: "Backups, scripts, and QR tools are planned extension points for this browser build." })}><MoreHorizontal size={19} /></button></div></header>
+        <header className="topbar"><div className="mobile-brand"><AppMark /><span>PKSM Browser</span></div><div className="breadcrumbs"><span>Workspace</span><ChevronDown size={13} /><strong>{activeArea}</strong></div><div className="top-actions"><button className="icon-button theme-toggle" onClick={() => setDarkMode((current) => !current)} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} title={darkMode ? "Switch to light mode" : "Switch to dark mode"}>{darkMode ? <Sun size={17} /> : <Moon size={17} />}</button><button className="icon-button mobile-only" onClick={() => setShowInspector(!showInspector)} aria-label="Toggle inspector"><PanelRight size={18} /></button><button className="quiet-button" onClick={() => storageFileInput.current?.click()}><HardDrive size={15} /> Load workspace</button><button className="quiet-button" onClick={() => setShowImport(true)}><Upload size={15} /> Import save</button><button className="primary-button" onClick={exportActiveFile}><Download size={15} /> {gen1Save ? (dirty ? "Export edited .sav" : "Export .sav") : (dirty ? "Export changes" : "Export storage")}</button><button className="icon-button" onClick={() => toast("More tools", { description: "Backups, scripts, and QR tools are planned extension points for this browser build." })}><MoreHorizontal size={19} /></button></div></header>
 
         <div className="content-wrap">
           <section className="page-intro"><div><div className="eyebrow"><span className="status-dot" /> LOCAL WORKSPACE / SAVE 01</div><h1>{showPokedex ? "Pokédex tracker" : "Save editor"}</h1><p>{showPokedex ? "Compare your current storage against the National Pokédex and locate every captured species." : "Inspect a local save, organize its boxes, and make careful edits before exporting."}</p></div><div className="intro-meta"><span className="meta-label">FORMAT</span><strong>{saveFile ? (detectedFormat ? `GEN ${detectedFormat.generation} · ${formatStatusLabel(detectedFormat.status)}` : saveFile.name.split(".").pop()?.toUpperCase()) : "NOT LOADED"}</strong><span className="meta-divider" /><span className="meta-label">STATE</span><strong className={dirty ? "text-yellow" : "text-teal"}>{dirty ? "UNSAVED" : "READY"}</strong></div></section>
 
           {showPokedex ? <section className="pokedex-panel panel-cut"><div className="pokedex-header"><div><div className="section-index">02 / COMPLETION</div><h2>National Pokédex</h2><p>Species are counted when a matching record exists anywhere in the current 24-box workspace.</p></div><button className="outline-button" onClick={() => { setShowPokedex(false); setActiveArea("Save editor"); }}><LayoutGrid size={15} /> Back to storage</button></div><div className="pokedex-progress"><div className="pokedex-progress-copy"><strong>{completedPokedexCount} <span>/ {nationalPokedex.length}</span></strong><span>species recorded · {pokedexPercent}% complete</span></div><div className="pokedex-track"><span style={{ width: `${pokedexPercent}%` }} /></div><div className="pokedex-stats"><span><b>{completedPokedexCount}</b> captured</span><span><b>{nationalPokedex.length - completedPokedexCount}</b> missing</span><span><b>{records.filter((record) => record.status !== "empty").length}</b> occupied slots</span></div></div><div className="pokedex-search"><Search size={15} /><input value={pokedexQuery} onChange={(event) => setPokedexQuery(event.target.value.toLowerCase())} placeholder="Search species catalog" aria-label="Search Pokédex species" /></div><div className="pokedex-columns"><section><div className="pokedex-section-title"><span>MISSING SPECIES</span><small>{missingSpecies.length} matches</small></div><div className="species-list">{missingSpecies.slice(0, 30).map((species) => <div className="species-chip missing" key={species.id}><span className="species-number">#{String(species.id).padStart(4, "0")}</span><strong>{species.name.replace(/-/g, " ")}</strong><span className="missing-dot" /></div>)}{missingSpecies.length > 30 && <div className="species-more">+{missingSpecies.length - 30} more missing · refine your search to browse</div>}{missingSpecies.length === 0 && <div className="species-empty">No missing species match this search.</div>}</div></section><section><div className="pokedex-section-title"><span>RECORDED SPECIES</span><small>{matchedSpecies.length} matches</small></div><div className="species-list">{matchedSpecies.slice(0, 16).map((species) => <button className="species-chip captured" key={species.id} onClick={() => jumpToPokedexRecord(species.name)}><span className="species-number">#{String(species.id).padStart(4, "0")}</span><strong>{species.name.replace(/-/g, " ")}</strong><small>{capturedSpecies.get(species.name)?.nickname || "Recorded"} · B{String(capturedSpecies.get(species.name)?.box || 0).padStart(2, "0")}</small></button>)}{matchedSpecies.length > 16 && <div className="species-more">+{matchedSpecies.length - 16} more recorded · refine your search to browse</div>}{matchedSpecies.length === 0 && <div className="species-empty">No recorded species match this search.</div>}</div></section></div><div className="pokedex-note"><Info size={14} /> This tracker uses a bundled National Pokédex species catalog. Forms, regional variants, and game-specific availability are not separated yet.</div></section> : <>
 
-          <section className="file-strip"><div className="file-icon"><span className="notch-glyph" /><FileUp size={18} /></div><div className="file-copy"><strong>{saveFile ? saveFile.name : "No save file loaded"}</strong><span>{saveFile ? `${formatBytes(saveFile.size)} · ${saveFile.type}${detectedFormat ? ` · ${detectedFormat.label} · ${detectedFormat.reader}` : " · inspection only"}` : "Open a .sav, .dat, or supported Pokémon file to begin"}</span></div><div className="file-strip-actions">{saveFile && <button className="text-button" onClick={clearWorkspace}><X size={14} /> Clear</button>}<button className="outline-button" onClick={() => setShowImport(true)}>{saveFile ? "Replace file" : "Open save"} <ArrowDownToLine size={15} /></button><button className="text-button" onClick={() => storageFileInput.current?.click()}><HardDrive size={14} /> Load workspace</button></div></section>
+          <section className="file-strip"><div className="file-icon"><span className="notch-glyph" /><FileUp size={18} /></div><div className="file-copy"><strong>{saveFile ? saveFile.name : "No save file loaded"}</strong><span>{saveFile ? `${formatBytes(saveFile.size)} · ${saveFile.type}${detectedFormat ? ` · ${detectedFormat.label} · ${detectedFormat.reader}${gen1Save ? " · BINARY EXPORT ENABLED" : ""}` : " · inspection only"}` : "Open a .sav, .dat, or supported Pokémon file to begin"}</span></div><div className="file-strip-actions">{saveFile && <button className="text-button" onClick={clearWorkspace}><X size={14} /> Clear</button>}<button className="outline-button" onClick={() => setShowImport(true)}>{saveFile ? "Replace file" : "Open save"} <ArrowDownToLine size={15} /></button><button className="text-button" onClick={() => storageFileInput.current?.click()}><HardDrive size={14} /> Load workspace</button></div></section>
 
           </>}
 

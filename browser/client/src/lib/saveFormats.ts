@@ -15,7 +15,7 @@ export type SaveFormat = {
 };
 
 export const saveFormats: SaveFormat[] = [
-  { id: "gen1-gb", generation: "I", label: "Red / Blue / Yellow", reader: "Sav1 · PK1", extensions: [".sav", ".dsv"], sizes: [0x8000, 0x10000], status: "recognized-layout", editableModel: true, binaryExport: false, note: "GB/GBC cartridge SRAM; Japanese dumps may use the 64 KiB layout." },
+  { id: "gen1-gb", generation: "I", label: "Red / Blue / Yellow", reader: "Sav1 · PK1", extensions: [".sav", ".dsv"], sizes: [0x8000, 0x10000], status: "recognized-layout", editableModel: true, binaryExport: true, note: "International 32 KiB Red/Blue/Yellow saves support in-place box-record export; Japanese and 64 KiB variants remain inspection-only." },
   { id: "gen2-gbc", generation: "II", label: "Gold / Silver / Crystal", reader: "Sav2 · PK2", extensions: [".sav", ".dsv"], sizes: [0x8000, 0x10000], status: "recognized-layout", editableModel: true, binaryExport: false, note: "GB/GBC cartridge SRAM; emulator RTC trailers require preserving the original wrapper." },
   { id: "gen3-gba", generation: "III", label: "Ruby / Sapphire / Emerald / FireRed / LeafGreen", reader: "Sav3 · SavRS · SavE · SavFRLG · PK3", extensions: [".sav"], sizes: [0x20000], status: "recognized-layout", editableModel: true, binaryExport: false, note: "GBA flash layout; game-family recognition needs content validation beyond size." },
   { id: "gen4-ds", generation: "IV", label: "Diamond / Pearl / Platinum / HeartGold / SoulSilver", reader: "Sav4 · SavDP · SavPT · SavHGSS · PK4", extensions: [".sav", ".dsv"], sizes: [0x80000], status: "recognized-layout", editableModel: true, binaryExport: false, note: "DS EEPROM layout; PKSM also unwraps known emulator and dumper trailers." },
