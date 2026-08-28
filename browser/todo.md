@@ -11,6 +11,7 @@
 - [x] Add an animated loading skeleton while the deferred catalog chunk is fetching.
 - [x] Add matching item-description skeleton rows during catalog hydration.
 - [x] Add item-category skeleton placeholders during catalog hydration.
+- [x] Add an explicit catalog hydration error state and retry button.
 
 ## Sources and regeneration
 
