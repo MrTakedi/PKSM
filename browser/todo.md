@@ -6,6 +6,7 @@
 - [x] Add catalog browsing/details to the loaded-game context and editor without overwhelming the workspace.
 - [x] Validate counts, duplicate identifiers, missing descriptions, TypeScript/build output, and responsive presentation.
 - [ ] Commit and push the expanded catalog milestone to the GitHub feature branch.
+- [x] Replace raw GitHub sprite URLs with the CORS-compatible Sashimi PokeAPI mirror.
 
 ## Sources and regeneration
 

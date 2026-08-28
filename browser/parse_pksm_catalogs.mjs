@@ -45,10 +45,10 @@ function parseIntOr(value, fallback = 0) { const parsed = Number.parseInt(value,
 function escape(value) { return JSON.stringify(value); }
 
 const [movesCsv, moveFlavorCsv, itemsCsv, itemProseCsv] = await Promise.all([
-  fetchText("https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/moves.csv"),
-  fetchText("https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/move_flavor_text.csv"),
-  fetchText("https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/items.csv"),
-  fetchText("https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/item_prose.csv"),
+  fetchText("https://sashimi.storehex.com/PokeAPI/pokeapi/master/data/v2/csv/moves.csv"),
+  fetchText("https://sashimi.storehex.com/PokeAPI/pokeapi/master/data/v2/csv/move_flavor_text.csv"),
+  fetchText("https://sashimi.storehex.com/PokeAPI/pokeapi/master/data/v2/csv/items.csv"),
+  fetchText("https://sashimi.storehex.com/PokeAPI/pokeapi/master/data/v2/csv/item_prose.csv"),
 ]);
 const movesApi = csvRows(movesCsv).filter((row) => row.language_id === undefined || row.language_id === "");
 const moveProse = new Map();
