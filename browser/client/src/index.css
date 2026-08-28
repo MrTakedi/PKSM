@@ -180,3 +180,10 @@
 .dark-mode .catalog-skeleton-bar { background-image: linear-gradient(90deg, rgba(215,179,91,.12), rgba(215,179,91,.42), rgba(215,179,91,.12)); }
 @media (prefers-reduced-motion: reduce) { .catalog-skeleton-bar { animation: none; } }
 @media (max-width: 700px) { .catalog-skeleton { min-width: 0; max-width: 100%; flex-wrap: wrap; } .catalog-skeleton.compact { margin-top: 8px; } }
+
+/* Item description skeleton: mirrors move hydration without shifting the held-item field. */
+.item-description-skeleton { display: grid; gap: 4px; width: min(100%, 220px); margin-top: 6px; }
+.item-description-skeleton span { display: block; width: 100%; height: 7px; border-radius: 1px; background: linear-gradient(90deg, rgba(157,115,28,.12), rgba(157,115,28,.38), rgba(157,115,28,.12)); background-size: 200% 100%; animation: catalog-shimmer 1.25s linear infinite; }
+.item-description-skeleton span.short { width: 62%; animation-delay: 120ms; }
+.dark-mode .item-description-skeleton span { background-image: linear-gradient(90deg, rgba(215,179,91,.10), rgba(215,179,91,.36), rgba(215,179,91,.10)); }
+@media (prefers-reduced-motion: reduce) { .item-description-skeleton span { animation: none; } }
