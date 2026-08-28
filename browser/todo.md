@@ -7,6 +7,7 @@
 - [x] Validate counts, duplicate identifiers, missing descriptions, TypeScript/build output, and responsive presentation.
 - [ ] Commit and push the expanded catalog milestone to the GitHub feature branch.
 - [x] Replace raw GitHub sprite URLs with the CORS-compatible Sashimi PokeAPI mirror.
+- [x] Lazy-load the large generated move and item catalogs to reduce the initial JavaScript bundle.
 
 ## Sources and regeneration
 

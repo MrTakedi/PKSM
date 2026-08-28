@@ -164,3 +164,7 @@
   .brand-lockup { padding: 0; border-bottom: 0; }
   .mobile-wordmark b { font-size: 15px; }
 }
+
+/* Catalog hydration status: make deferred data loading visible without blocking the empty workspace. */
+.catalog-loading { color: #9d731c; font: 600 9px "IBM Plex Mono", monospace; letter-spacing: .04em; }
+.dark-mode .catalog-loading { color: #d7b35b; }
