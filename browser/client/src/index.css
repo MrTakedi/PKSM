@@ -168,3 +168,15 @@
 /* Catalog hydration status: make deferred data loading visible without blocking the empty workspace. */
 .catalog-loading { color: #9d731c; font: 600 9px "IBM Plex Mono", monospace; letter-spacing: .04em; }
 .dark-mode .catalog-loading { color: #d7b35b; }
+
+/* Catalog skeleton: a tactile, low-motion loading cue for deferred move/item data. */
+.catalog-skeleton { display: inline-flex; align-items: center; gap: 6px; min-width: 180px; color: #9d731c; vertical-align: middle; }
+.catalog-skeleton.compact { display: flex; width: min(100%, 280px); margin: 4px 0 8px; }
+.catalog-skeleton-label { flex: 0 0 auto; font: 600 9px/1 "IBM Plex Mono", monospace; letter-spacing: .05em; white-space: nowrap; }
+.catalog-skeleton-bar { display: block; width: 42px; height: 7px; border-radius: 1px; background: linear-gradient(90deg, rgba(157,115,28,.14), rgba(157,115,28,.45), rgba(157,115,28,.14)); background-size: 200% 100%; animation: catalog-shimmer 1.25s linear infinite; }
+.catalog-skeleton-bar.short { width: 24px; animation-delay: 120ms; }
+@keyframes catalog-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.dark-mode .catalog-skeleton { color: #d7b35b; }
+.dark-mode .catalog-skeleton-bar { background-image: linear-gradient(90deg, rgba(215,179,91,.12), rgba(215,179,91,.42), rgba(215,179,91,.12)); }
+@media (prefers-reduced-motion: reduce) { .catalog-skeleton-bar { animation: none; } }
+@media (max-width: 700px) { .catalog-skeleton { min-width: 0; max-width: 100%; flex-wrap: wrap; } .catalog-skeleton.compact { margin-top: 8px; } }
