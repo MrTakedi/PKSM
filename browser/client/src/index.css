@@ -203,3 +203,7 @@
 .dark-mode .catalog-retry { color: #e09a76; }
 .dark-mode .catalog-retry button { border-color: rgba(224,154,118,.38); background: rgba(224,154,118,.08); }
 .dark-mode .catalog-retry button:hover { background: rgba(224,154,118,.16); }
+
+/* Offline catalog marker: communicate that essential names are available locally while full prose is unavailable. */
+.catalog-offline { color: #9d731c; font: 600 9px/1.25 "IBM Plex Mono", monospace; letter-spacing: .03em; text-transform: uppercase; }
+.dark-mode .catalog-offline { color: #d7b35b; }

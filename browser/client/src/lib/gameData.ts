@@ -67,6 +67,16 @@ export const keyItemsGen8 = entries(["Rotom Bike", "Flying Taxi", "Dynamax Band"
 
 export type GeneratedCatalogSets = Record<string, { moves: readonly CatalogEntry[]; items: readonly CatalogEntry[] }>;
 
+export function hydrateOfflineCatalogs(generated: GeneratedCatalogSets) {
+  generationCatalogs.forEach((catalog) => {
+    const source = generated[catalog.generation];
+    if (source) {
+      catalog.moves = [...source.moves];
+      catalog.items = [...source.items];
+    }
+  });
+}
+
 export function hydrateGenerationCatalogs(generated: GeneratedCatalogSets) {
   generationCatalogs.forEach((catalog) => {
     const source = generated[catalog.generation];

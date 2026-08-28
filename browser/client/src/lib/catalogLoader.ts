@@ -1,7 +1,12 @@
 // Cartridge Lab performance boundary: generated move/item prose stays out of the initial bundle and is hydrated on demand.
-import { hydrateGenerationCatalogs, type GeneratedCatalogSets } from "./gameData";
+import { hydrateGenerationCatalogs, hydrateOfflineCatalogs, type GeneratedCatalogSets } from "./gameData";
+import { offlineCatalogs } from "./catalogs.offline";
 
 let catalogPromise: Promise<void> | null = null;
+
+export function loadOfflineCatalogs() {
+  hydrateOfflineCatalogs(offlineCatalogs);
+}
 
 export function loadCatalogs(): Promise<void> {
   if (!catalogPromise) {

@@ -12,6 +12,7 @@
 - [x] Add matching item-description skeleton rows during catalog hydration.
 - [x] Add item-category skeleton placeholders during catalog hydration.
 - [x] Add an explicit catalog hydration error state and retry button.
+- [x] Add a lightweight offline catalog fallback for essential move and item data.
 
 ## Sources and regeneration
 
